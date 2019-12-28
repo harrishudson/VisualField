@@ -8358,10 +8358,10 @@ function browse_table_execute(the_table, term, qry, params, context, display_col
     else
      $I('browse_navigation').innerHTML='';
   }
- }
 
- if ((!isNaN(vOFFSET))&&(!isNaN(page_size)))
-  qry= 'select * from ('+qry+') LIMIT '+page_size+' OFFSET '+vOFFSET;
+  if ((!isNaN(vOFFSET))&&(!isNaN(page_size)))
+   qry= 'select * from ('+qry+') LIMIT '+page_size+' OFFSET '+vOFFSET;
+ }
 
  gDB.transaction(function (t) {
   t.executeSql(qry, params,
@@ -9100,10 +9100,10 @@ function table_viz_render_run_query(object_name, qry, params, context, total_row
     else
      $I('table_viz_render_navigation').innerHTML='';
    }
-  }
 
- if ((!isNaN(vOFFSET))&&(!isNaN(page_size)))
-  qry= 'select * from ('+qry+') LIMIT '+page_size+' OFFSET '+vOFFSET;
+  if ((!isNaN(vOFFSET))&&(!isNaN(page_size)))
+   qry= 'select * from ('+qry+') LIMIT '+page_size+' OFFSET '+vOFFSET;
+ }
 
  gDB.transaction(function (t) {
   t.executeSql(qry, params,
