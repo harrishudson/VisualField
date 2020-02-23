@@ -8,6 +8,7 @@ var currentCache = {
 const offlineUrl = 'vf.html';
 const offlineUrls = [
 'vf.html',
+'//visualfield.org/favicon.svg',
 'https://npmcdn.com/@turf/turf@5.1.6/turf.min.js',
 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.css',
 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.js',
