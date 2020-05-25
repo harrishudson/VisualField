@@ -1,6 +1,6 @@
 'use strict';
 
-var cacheVersion = 2;
+var cacheVersion = 3;
 var currentCache = {
   offline: 'offline-cache' + cacheVersion
 };
@@ -55,13 +55,13 @@ this.addEventListener('fetch', event => {
         event.respondWith(
           fetch(event.request.url).catch(error => {
               // Return the offline page
-              return caches.match(offlineUrl);
+              return caches.match(offlineUrl,{ignoreSearch:true});
           })
     );
   }
   else{
         // Respond with everything else if we can
-        event.respondWith(caches.match(event.request)
+        event.respondWith(caches.match(event.request,{ignoreSearch:true})
                         .then(function (response) {
                         return response || fetch(event.request);
                     })
