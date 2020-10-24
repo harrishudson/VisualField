@@ -11,21 +11,21 @@ Requires a HTML5 and WebSQL enabled browser.
 Load vf.html in your browser in a file:// or http(s):// protocol context.
 
 ## Dependencies
-Turf
-Leaflet
-Leaflet.markerlcuster
-Leaflet.heat
-Moment
-Chartjs
-ExifReader
-Visjs Network
-Proj4js
-jQuery.csv
-Words double-metaphone
-Words stemmer
-wellknown
-Distance Vincenty
-Font Awesome
+- Turf
+- Leaflet
+- Leaflet.markerlcuster
+- Leaflet.heat
+- Moment
+- Chartjs
+- ExifReader
+- Visjs Network
+- Proj4js
+- jQuery.csv
+- Words double-metaphone
+- Words stemmer
+- wellknown
+- Distance Vincenty
+- Font Awesome
 
 ## Author 
 Harris Hudson
