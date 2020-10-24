@@ -1,6 +1,6 @@
 'use strict';
 
-var cacheVersion = 3;
+var cacheVersion = '3.0.1';
 var currentCache = {
   offline: 'offline-cache' + cacheVersion
 };
@@ -9,19 +9,20 @@ const offlineUrl = 'vf.html';
 const offlineUrls = [
  'vf.html',
  'https://npmcdn.com/@turf/turf@5.1.6/turf.min.js', 
- 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.css', 
- 'https://unpkg.com/leaflet@1.6.0/dist/leaflet.js', 
- 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-icon.png',
- 'https://unpkg.com/leaflet@1.6.0/dist/images/marker-shadow.png',
+ 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css',
+ 'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js',
+ 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+ 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js', 
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css', 
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.4.1/dist/MarkerCluster.css', 
- 'https://cdn.jsdelivr.net/npm/leaflet-easybutton@2.4.0/src/easy-button.css', 
- 'https://cdn.jsdelivr.net/npm/leaflet-easybutton@2.4.0/src/easy-button.js', 
  'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.24.0/moment.min.js', 
  'https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.css', 
  'https://cdn.jsdelivr.net/npm/chart.js@2.9.3/dist/Chart.min.js',
- 'https://cdn.jsdelivr.net/npm/exifreader@3.11.0/dist/exif-reader.js', 
+ 'https://cdn.jsdelivr.net/npm/exifreader@3.12.3/dist/exif-reader.js', 
+ 'https://unpkg.com/vis-network@8.4.0/dist/vis-network.min.js', 
+ 'https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js',
+ 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.6.2/proj4.js',
  'https://cdn.jsdelivr.net/npm/jquery-csv@1.0.11/src/jquery.csv.min.js', 
  'https://cdn.jsdelivr.net/npm/stemmer@1.0.5/index.js', 
  'https://cdn.jsdelivr.net/npm/double-metaphone@1.0.5/index.js', 
