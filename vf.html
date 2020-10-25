@@ -18074,7 +18074,7 @@ function build_api_page_helpers() {
 
 function show_api_table_helper(i) {
  if (i<0) {
-  $I('api_table_detail')='';
+  $I('api_table_detail').innerHTML='';
   return;
  }
  var defn=gVF_DEFINITION.TABLES[i];
