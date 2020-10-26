@@ -13,7 +13,7 @@ Load vf.html in your browser in a file:// or http(s):// protocol context.
 ## Dependencies
 - Turf
 - Leaflet
-- Leaflet.markerlcuster
+- Leaflet.markercluster
 - Leaflet.heat
 - Moment
 - Chartjs
@@ -23,7 +23,7 @@ Load vf.html in your browser in a file:// or http(s):// protocol context.
 - jQuery.csv
 - Words double-metaphone
 - Words stemmer
-- wellknown
+- Wellknown
 - Distance Vincenty
 - Font Awesome
 
