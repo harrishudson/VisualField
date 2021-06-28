@@ -56,7 +56,7 @@ refer to instructions within this file as how to conduct some unit tests
 of some built-in Custom Functions within Visual Field.  This requires temporarily
 editing the vf.html file and adding a script reference to the 'test/vf_unit_test.js"
 javascript file.  The test/vf_unit_test.js file does not need to be deployed
-with your normal deployment of Visual Filed.  It is provided here for testing
+with your normal deployment of Visual Field.  It is provided here for testing
 and diagnosing possible issues with Custom Functions. 
 
 ## Dependencies
