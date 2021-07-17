@@ -1,6 +1,6 @@
 'use strict';
 
-var cacheVersion = 'vf3.1.0_version_001';
+var cacheVersion = 'vf3.2.0_version_001';
 var currentCache = {
   offline: 'offline-cache' + cacheVersion
 };
@@ -10,7 +10,7 @@ const offlineUrls = [
  'vf.html',
  'favicon.svg',
  'vf.webmanifest',
- 'https://unpkg.com/@turf/turf@6.4.0/turf.min.js',
+ 'https://unpkg.com/@turf/turf@6.5.0/turf.min.js', 
  'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css',
  'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js',
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.0/dist/leaflet.markercluster.js',
@@ -19,6 +19,8 @@ const offlineUrls = [
  'https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.css',
  'https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js',
  'https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js',
+ 'https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js', 
+ 'https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7/dist/chartjs-plugin-zoom.min.js', 
  'https://cdn.jsdelivr.net/npm/exifreader@3.16.0/dist/exif-reader.js',
  'https://unpkg.com/vis-network@9.0.4/dist/vis-network.min.js',
  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js',

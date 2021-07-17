@@ -4,7 +4,7 @@
  <meta name="author" content="Harris Hudson. harris@harrishudson.com"/>
  <title>Visual Field</title>
  <meta name="description" content="Explore, Process and Visualize your data right in your browser."/>
- <meta id="application-name" name="application-name" content="Visual Field (v3.1.0 - Released June 2021)."/>
+ <meta id="application-name" name="application-name" content="Visual Field (v3.2.0 - Released July 2021)."/>
  <meta charset="UTF-8"/>
  <meta http-equiv='Content-Security-Policy' content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://npmcdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "/>
  <meta http-equiv='Content-Security-Policy' content="style-src 'self' 'unsafe-inline' https://npmcdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com file: ;"/>
@@ -12,8 +12,8 @@
  <meta http-equiv='Content-Security-Policy' content="img-src 'self' data: http: https: file: mediastream: blob: filesystem: ;"/>
  <meta name="viewport" content="width=device-width, initial-scale=1"/>
  <link id="ico" rel="icon" href="">
- <script src="https://unpkg.com/@turf/turf@6.4.0/turf.min.js" 
-  integrity="sha384-2jy3PXZU7iyYukIOhA+2HBZR72H+v4HuziiJ2tjGV22ksZbsJum6YbCDwnnWmQf2" 
+ <script src="https://unpkg.com/@turf/turf@6.5.0/turf.min.js" 
+  integrity="sha384-82q0nm29xZzIo5BMtDYnh2/NxeO6FoaK1S/0nF84w3cEsqbBfun3JdMyDVYWfVY5" 
   crossorigin="anonymous"></script>
  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css"
   integrity="sha512-xodZBNTC5n17Xt2atTPuE1HxjVMSvLVW9ocqUKLsCC5CXdbqCmblAshOMAS6/keqq/sMZMZ19scR4PsZChSR7A=="
@@ -38,6 +38,13 @@
   crossorigin="anonymous"></script>
  <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4/dist/Chart.min.js" 
   integrity="sha384-zNy6FEbO50N+Cg5wap8IKA4M/ZnLJgzc6w2NqACZaK0u0FXfOWRRJOnQtpZun8ha" 
+  crossorigin="anonymous"></script>
+ <script src="https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js" 
+  integrity="sha384-Cs3dgUx6+jDxxuqHvVH8Onpyj2LF1gKZurLDlhqzuJmUqVYMJ0THTWpxK5Z086Zm" 
+  crossorigin="anonymous"></script>
+ <!-- Note, chartjs-plugin-zoom is fixed to version 0.7.7 for compatibility with Chartjs version 2.9.4 -->
+ <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7/dist/chartjs-plugin-zoom.min.js" 
+  integrity="sha384-/8Dlz/HHZKwUuh9HZDV80gC+9mz8z95Iw8Np4VzOrudbL0KWUaxO+r1ZUItIIrAm" 
   crossorigin="anonymous"></script>
  <script src="https://cdn.jsdelivr.net/npm/exifreader@3.16.0/dist/exif-reader.js" 
   integrity="sha384-17PX7bbgLbEx0ZJRJenk+zeHLOaWJGEn0C1dD6KB98znqtQXf46/kvy7/rRkrBLe" 
@@ -244,6 +251,7 @@ const gMAX_MAP_ROWS=120000;
 const gMAX_MAP_POPUP_CONTENT_SIZE=300*1024*1024; // 300Mb
 const gMAX_UNCLUSTERED_POINTS=3000;
 const gMAX_PIE_HEADER_ROWS=30;   
+const gMAX_CHART_ROWS_NO_ZOOM=20;   
 const gUNPAGINATED_MAX_ROWS=100;
 const gMAX_MEDIA_FILE_UPLOAD_SIZE=40*1024*1024; // 40Mb (Needs to be <gMAX_EXPORT_STRING_SIZE/2/(3/4) (to raw, to B64)
 const gMAX_SQL_OUTPUT_SIZE=512*1024*1024; //512Mb (May be browser dependent) (WebSQL (sqlite) specific
@@ -6042,6 +6050,21 @@ var VF_CUSTOM_FUNCTIONS =
          var result=turf.getType(gj);
          return result;
         }
+ },
+ {id: 2540,
+  library: "Turf",
+  name: "pointsWithinPolygon",
+  type: "immutable",
+  help: "Finds Points that fall within (Multi)Polygon(s).",
+  parameters: [{name:"points", help:"Points as Input Search, Point, MultiPoint, GeometryCollection", optional:false, default:null},
+               {name:"polygons", help:"Points must be within these (Multi)Polygon(s)", optional:false, default:null}],
+  func: function(params) {
+         var points=toFeature(wkt2geojson(params[0]));
+         var polygons=toFeature(wkt2geojson(params[1]));
+         var result=turf.pointsWithinPolygon(points,polygons);          
+         var geomCollection=convertFCtoGC(result);
+         return geojson2wkt(geomCollection);
+        }
  }
 ];
 
@@ -11548,6 +11571,7 @@ function chart_viz_render_run_query(object_name,qry,rowid,md,reversed_time_serie
  var links_target=null;
  var anchor=null;
  var append_metadata=false;
+ var is_zoomable=true;
  var chart_data={};
  //chart_data['type']='bar';
  var datasets=[];
@@ -11569,11 +11593,13 @@ function chart_viz_render_run_query(object_name,qry,rowid,md,reversed_time_serie
  var pie_borderColor=[];
  var series1_drilldown=[];
  if (series1_type !== 'pie') {
+  is_zoomable=true;
   series1_dataset={type:core_chart_type(series1_type),label:series1_column,borderColor:hexToRGBA(series1_color,1), 
                     backgroundColor:series1_background_color,borderWidth:1.5,yAxisID:series1_axis_orient,spanGaps:series1_line_skip};
   if (chart_data['type']=='scatter')
    series1_dataset['fill']=(series1_type.match('fill')?true:false);
  } else {
+  is_zoomable=false;
   series1_dataset={type:series1_type,label:series1_column,borderWidth:2};
   try {
    var color_string=$I('chart_viz_display_theme').value;
@@ -11671,6 +11697,8 @@ function chart_viz_render_run_query(object_name,qry,rowid,md,reversed_time_serie
   gDB.transaction(function (t) {
    t.executeSql(qry, [],
     function (tx, r) {
+     if (parseInt(r.rows.length,10)<gMAX_CHART_ROWS_NO_ZOOM)
+      is_zoomable=false;
      if (parseInt(r.rows.length,10)>gMAX_CHART_ROWS) {
       chart_fallback_fade();     
       var fallback_md={};
@@ -11875,7 +11903,11 @@ function chart_viz_render_run_query(object_name,qry,rowid,md,reversed_time_serie
                               chart_data['data']['datasets']=datasets;
                               chart_data['options']=options;
                              }
-            draw_chart(chart_data,background_color,object_name);
+           if (is_zoomable) {
+            chart_data['options']['pan']={enabled:true,mode:'xy'};
+            chart_data['options']['zoom']={enabled:true,mode:'xy'};
+           }
+            draw_chart(chart_data,background_color,object_name,is_zoomable);
          });
 }
 
@@ -11887,7 +11919,8 @@ function load_chart_tx_err(e) {
  window.setTimeout(function(){set_visible_pane('home');},2000);
 }
 
-function draw_chart(chart_data,background_color,object_name) {
+function draw_chart(chart_data,background_color,object_name,is_zoomable) {
+ $I('zoom_reset').style.display=((is_zoomable)?'inline-block':'none');
  $I('chart_viz_render_progress').innerHTML='';
  var ctx=$I('chart_viz_the_canvas').getContext('2d');
  if (!background_color)
@@ -11951,6 +11984,12 @@ function toggle_points() {
    }
   gTHE_CHART.update();
     } catch(e) {};
+}
+
+function chart_zoom_reset() {
+ try {
+  gTHE_CHART.resetZoom();
+ } catch(e) {};
 }
 
 function chart_fallback_fade() {
@@ -20671,6 +20710,7 @@ placeholder="#003f5c,#58508d,#bc5090,#ff6361,#ffa600"/></dd>
 <button onclick="toggle_points();" title="Toggle Line Chart Point Radius"><i class="fa fa-bullseye"></i></button>
 <button onclick="download_chart();" title="Download Chart"><i class="fa fa-download"></i></button>
 <button onclick="toggle_fullscreen();" title="Fullscreen"><i class="fa fa-arrows-alt"></i></button>
+<button id="zoom_reset" onclick="chart_zoom_reset();" title="Reset Zoom" style="display:none;"><i class="fa fa-reply"></i></button>
 </div>
 <span id="chart_viz_render_progress" class="throbber"></span> 
 </div>
@@ -21076,7 +21116,7 @@ and can either be linked (joined) back to the source table or used for further p
 This is because the structure of the output table is predictable.  Custom Functions have a function Id that 
 is associated with them and an arbitrary "library" that is a general grouping (described below).  If you are a 
 web developer, the Custom Function metadata is extensible - <em>please search the source of this page for
-"// Example of adding your own Custom Function definition" </em> approximately line 18475 for
+"// Example of adding your own Custom Function definition" </em> approximately line 18514 for
 instructions.
 <h5>Input Table</h5>
 Specify the input table the Custom Function will be run against.
@@ -21450,14 +21490,16 @@ In the mini list, the actions that can be undertaken are;
 <dd>Will clear this form.</dd>
 <dt><button><i class="fa fa-bars"></i></button></dt>
 <dd>Will exit from a Chart Visualization and return to the Visual Field Menu (Home) pane</dd>
-<dt><button><i class="fa fa-arrows-alt"></i></button></dt>
-<dd>Will toggle between Fullscreen mode for this visualization</dd>
 <dt><button><i class="fa fa-bullseye"></i></button></dt>
 <dd>Will toggle Line Chart point markers between 3 set radii size values.  Possibly useful 
 for; 1) when viewing on a touch device that requires larger points to interact with, and 2) when
 downloading a Chart as an image it may be desirable to remove all point markers from the chart.</dd>
 <dt><button><i class="fa fa-download"></i></button></dt>
 <dd>Will download a chart in an image format.</dd>
+<dt><button><i class="fa fa-arrows-alt"></i></button></dt>
+<dd>Will toggle between Fullscreen mode for this visualization</dd>
+<dt><button><i class="fa fa-reply"></i></button></dt>
+<dd>Will restore chart (reset zoom) from any pan or zoom action.</dd>
 </dl>
 </p>
 
@@ -21471,6 +21513,7 @@ Visualization.  Please refer to the General Help for details of this.</li>
 <li>Pie Chart Visualizations have an internal limit of the maximum number rows that will include
 a chart header legend.  In charts with a greater number of rows the header legend will automatically 
 be omitted.  Please refer to the General Help for details of this.</li>
+<li>Chart Visualizations must have a minimum number of results required for pan and zoom to be enabled.</li>
 <li>In the current version of Chartjs, Time-Series Bar charts that consist of duplicate values
  may result in no chart being rendered for that particular series.  <b>Tip</b>: If you are creating
  a Time-Series X-Axis column and a Bar chart is failing to render - please ensure you do not have 
@@ -23161,6 +23204,7 @@ The following are some fixed internal limits within Visual Field;
    will be parsed line-by-line.</li>
 <li><b>10,000</b> - Maximum number of rows in Chart Visualization result set before falling back to Table Visualization.</li>
 <li><b>30</b> - Maximum number of rows in Pie Chart Visualization result set before Pie Chart header legend will be omitted.</li>
+<li><b>20</b> - Minimum number of rows in Chart Visualizations result set for the Chart to be pan and zoom enabled.</li>
 <li><b>120,000</b> - Maximum number of rows in Map Visualization result set before falling back to Table Visualization.</li>
 <li><b>3,000</b> or <b>any coincident</b> Points - Maximum number of rows in Map Visualization Point only result set before Points will clustered.</li>
 <li><b>100 unsorted rows</b> - Maximum number of rows displayed in Visual Field mini-lists.</li>
@@ -23510,3 +23554,4 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <!--
  <script src="test/vf_unit_test.js"/></script>
 -->
+

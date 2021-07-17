@@ -66,6 +66,8 @@ and diagnosing possible issues with Custom Functions.
 - Leaflet.heat
 - Moment
 - Chartjs
+- Hammerjs
+- Chartjs-plugin-zoom
 - ExifReader
 - Visjs Network
 - Proj4js
