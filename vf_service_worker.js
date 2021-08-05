@@ -1,6 +1,6 @@
 'use strict';
 
-var cacheVersion = 'vf3.2.0_version_001';
+var cacheVersion = 'vf3.2.0_version_002';
 var currentCache = {
   offline: 'offline-cache' + cacheVersion
 };
@@ -13,6 +13,8 @@ const offlineUrls = [
  'https://unpkg.com/@turf/turf@6.5.0/turf.min.js', 
  'https://unpkg.com/leaflet@1.7.1/dist/leaflet.css',
  'https://unpkg.com/leaflet@1.7.1/dist/leaflet.js',
+ 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+ 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.0/dist/leaflet.markercluster.js',
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.0/dist/MarkerCluster.Default.css',
  'https://cdn.jsdelivr.net/npm/leaflet.markercluster@1.5.0/dist/MarkerCluster.css',
