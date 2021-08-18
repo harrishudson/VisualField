@@ -4,7 +4,7 @@
  <meta name="author" content="Harris Hudson. harris@harrishudson.com"/>
  <title>Visual Field</title>
  <meta name="description" content="Explore, Process and Visualize your data right in your browser."/>
- <meta id="application-name" name="application-name" content="Visual Field (v3.2.0 - Released July 2021)."/>
+ <meta id="application-name" name="application-name" content="Visual Field (v3.3.0 - Released August 2021)."/>
  <meta charset="UTF-8"/>
  <meta http-equiv='Content-Security-Policy' content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://npmcdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "/>
  <meta http-equiv='Content-Security-Policy' content="style-src 'self' 'unsafe-inline' https://npmcdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com file: ;"/>
@@ -49,14 +49,14 @@
  <script src="https://cdn.jsdelivr.net/npm/exifreader@3.16.0/dist/exif-reader.js" 
   integrity="sha384-17PX7bbgLbEx0ZJRJenk+zeHLOaWJGEn0C1dD6KB98znqtQXf46/kvy7/rRkrBLe" 
   crossorigin="anonymous"></script>
- <script src="https://unpkg.com/vis-network@9.0.4/dist/vis-network.min.js" 
-  integrity="sha384-gCnwr3IVtq8uWdV/aFNHnfBm2RX7WcJR5ah4MsU98/0RvBqfxITkIlM6to+g0EKT" 
+ <script src="https://unpkg.com/vis-network@9.0.5/dist/vis-network.min.js" 
+  integrity="sha384-nK04NB7kr8XVjwCL/KNuHfkDUDC9fNdrgJ9HMsd6BADVoV0Kegxx/z8OHHDga1Sl" 
   crossorigin="anonymous"></script>
  <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js" 
   integrity="sha384-mFKkGiGvT5vo1fEyGCD3hshDdKmW3wzXW/x+fWriYJArD0R3gawT6lMvLboM22c0" 
   crossorigin="anonymous"></script>
- <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.2/proj4.js" 
-  integrity="sha384-/15woeO9MkaHR3vtUnQNCQ3dv2SCetXzB/B9LWfq7Kw+FowOKPi2JXCVPTBuzu9u" 
+ <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js" 
+  integrity="sha384-Zg0HdUmZ2bCzgG1aXkCKAM1eMsRebKIhcsT+PUUYheMfD9zI1W2y1crkhDmuG5MA" 
   crossorigin="anonymous"></script>
  <script>var module={};module.exports={};var exports={},jQuery={};</script>
  <!-- Non-namespaced libraries below, which don't appear to be strict modules, are generally 
@@ -236,6 +236,40 @@ hr {width:80%;text-align:center}
 // Will log console output if set to true;
 const gDEBUG=false;
 
+// --------------------------------------------------------------------------------------------------
+// Internal Settings.
+// METADATA security handling (may need to change these settings for your production web environment
+// deployment of Visual Field to change, or harden, default behaviour).
+
+/* gMETADATA_PERMIT_RESET_FROM_URI specifies whether the metadata can be reset from the 
+   query string parameter METADATA when the metadata is passed as a parameter or encoded URI.  
+   Default true.  Valid values; true, false
+   For production web environments, you may want to change this to false.
+   A value of false will prohibit the reset of Visual Field metadata from a passed
+   METADATA query string parameter.
+*/
+const gMETADATA_PERMIT_RESET_FROM_URI=true;  // true (default), false
+
+/* gMETADATA_PERMIT_AS_JSON_URI setting to false will not permit the METADATA query string
+   parameter to be passed as an encoded JSON URI string.  To restrict specifying metadata as an
+   encoded URI, which may be desirable in a production web environment, set this to false.
+   A value of true will allow the METADATA to be specified as a query string parameter as
+   an URI encoded JSON string.  A value of true is generally useful when invoking Visual
+   Field from a local file:// protocol context but is generally not necessary in a web 
+   http(s):// protocol context.
+*/
+const gMETADATA_PERMIT_AS_JSON_URI=true;  // true (default), false
+
+/* gMETADATA_FETCH_MODE default 'cors'.  Will be internally passed as the 'mode' property 
+   option to the METADATA javascript fetch request.  Will allow METADATA fetched as a cross origin
+   request.  For production web environments you may want to set this to 'no-cors' or 'same-origin'. 
+   To restrict fetching of METADATA files only from your same origin.  For local file:// protocol
+   contexts, where fetching remote CORS enabled METADATA files is required, then leave this as 'cors'.
+*/
+const gMETADATA_FETCH_MODE='cors';  // 'cors' (default), 'no-cors', 'same-origin'
+// --------------------------------------------------------------------------------------------------
+
+
 // Setup for offline use
 if ('serviceWorker' in navigator) {
  try {
@@ -244,6 +278,7 @@ if ('serviceWorker' in navigator) {
      } catch(e) { console.info('Info Only - Failed to register service worker; vf_service_worker.js'); }
 }
 
+// --------------------------------------------------------------------------------------------------
 //Internal limits
 const gMAX_FILE_SIZE_MB_FOR_FULL_PARSE=20;  
 const gMAX_CHART_ROWS=10000;
@@ -266,6 +301,7 @@ const gCRLFx2=gCRLF+gCRLF;
 const gMAX_SEQUENCE_RUN_LOG_ENTRIES=500; //Max sequence run log entries
 var gMEDIA_UPLOAD_FILE_PROGRESS_COUNTER=0;
 var gMEDIA_VISUALIZATION={};
+// --------------------------------------------------------------------------------------------------
 
 var gDUMP_FILE,gDUMP_FILE_OFFSET;
 
@@ -1701,26 +1737,33 @@ function startupPageLoad(flow) {
 }
 
 function import_flow(flow) {
- try {
-  gMETADATA_PARSED=JSON.parse(gMETADATA);
- } catch(e) { fetch_metadata(flow);  return; }
+ if (gMETADATA_PERMIT_AS_JSON_URI) {
+  try {
+   gMETADATA_PARSED=JSON.parse(gMETADATA);
+  } catch(e) { fetch_metadata(flow);  return; }
+ } else {
+  fetch_metadata(flow); 
+  return;
+ } 
  load_config(flow); 
 }
 
 function fetch_metadata(flow) {
  try {
-  fetch(gMETADATA).
+  fetch(gMETADATA,{mode:gMETADATA_FETCH_MODE}).
    then(function(response){ 
          try {return response.json();} 
          catch(e) {notify('Fetch failed, or JSON Parse failed, for Metadata');}}).
    then(function(data) {gMETADATA_PARSED=data; load_config(flow);}).
-   catch(function(err) {notify('Fetch failed, or JSON Parse failed, for Metadata.'); $L(err);});
- } catch(e) {notify('Fetch failed, or JSON Parse failed, for Metadata.');}
+   catch(function(err) {gMETADATA=null; load_config(flow); 
+	                notify('Fetch failed, or JSON Parse failed, for Metadata.'); $L(err);});
+ } catch(e) {gMETADATA=null; load_config(flow);
+	     notify('Fetch failed, or JSON Parse failed, for Metadata.');}
 }
 
 function load_config(flow) {
  config_defaults();
- if (gMETADATA_PARSED.CONFIG) {
+ if ((gMETADATA_PARSED)&&(gMETADATA_PARSED.CONFIG)) {
   var metaparsed=gMETADATA_PARSED.CONFIG;
   var metadef=gVF_DEFINITION.CONFIG;
   if (metaparsed.length==metadef.length) {
@@ -1774,7 +1817,8 @@ function window_resize() {
 };
 
 function dropTables(flow) {
- if ((!flow)||(flow==4)||((flow==2)&&(gMETADATA_PARSED.RESET_DB))) {
+ let reset_db=((gMETADATA_PARSED)&&(gMETADATA_PARSED.RESET_DB)&&(gMETADATA_PERMIT_RESET_FROM_URI));
+ if ((!flow)||(flow==4)||((flow==2)&&(reset_db))) {
   gDB.transaction(function (t) { 
    t.executeSql("drop table if exists VF_TABLES;", []); 
    t.executeSql("drop table if exists VF_SQL", []);
@@ -2210,52 +2254,58 @@ function cr_vf_objects(flow) {
  }
 
 function import_db_objects(flow) {
- let the_tables=gMETADATA_PARSED.TABLES;
- gDB.transaction(function (t) {
-  for (let table in the_tables) {
-   let defn=get_definition_table(table);
-   if (defn) {
-    let cols=defn.COLUMNS;
-    let pks=defn.primary_key_column;
-    let pk_indexes=get_pk_indexes(pks, cols);
-     for (let r=0; r<the_tables[table].length; r++) {
-      let the_row_data=the_tables[table][r];
-      if (the_tables[table][r].length == cols.length) {
-       let SQL_COUNT='select count(*) as row_count from '+
-                     sanitise(defn.TABLE)+' where ';
-       let WHERE='';
-       let PARAMS=[];
-       for (let i=0; i<pks.length; i++) {
-        if (WHERE) WHERE+=' and ';
-        WHERE+= sanitise(pks[i])+'=? ';
-        PARAMS.push(the_tables[table][r][pk_indexes[i]]);
-       } 
-       SQL_COUNT+= WHERE;
-       t.executeSql(SQL_COUNT,PARAMS,
-        function (tx, r) {
-    if ((r.rows.length>0)&&(r.rows[0].row_count==0)) {
-     let THE_INSERT='insert into '+sanitise(defn.TABLE)+'('+
-                    //Assumes columns don't contain commas.
-                     defn.COLUMNS.map(function(col){return sanitise(col.column)}).join(',')+') values '+
-                     generate_placeholders(cols.length);
-            t.executeSql(THE_INSERT,the_row_data,$L,$L);
-
-        } else{
-     let THE_UPDATE='update '+sanitise(defn.TABLE)+' set '+
-                    //Assumes columns don't contain commas.
-                     defn.COLUMNS.map(function(col){return sanitise(col.column)+'=? '}).join(',')+' where '+
-                     WHERE;
-           let all_params=the_row_data.concat(PARAMS);
-           t.executeSql(THE_UPDATE,all_params,$L,$L);
+ if (gMETADATA_PARSED) {
+  let the_tables=gMETADATA_PARSED.TABLES;
+  gDB.transaction(function (t) {
+   for (let table in the_tables) {
+    let defn=get_definition_table(table);
+    if (defn) {
+     let cols=defn.COLUMNS;
+     let pks=defn.primary_key_column;
+     let pk_indexes=get_pk_indexes(pks, cols);
+      for (let r=0; r<the_tables[table].length; r++) {
+       let the_row_data=the_tables[table][r];
+       if (the_tables[table][r].length == cols.length) {
+        let SQL_COUNT='select count(*) as row_count from '+
+                      sanitise(defn.TABLE)+' where ';
+        let WHERE='';
+        let PARAMS=[];
+        for (let i=0; i<pks.length; i++) {
+         if (WHERE) WHERE+=' and ';
+         WHERE+= sanitise(pks[i])+'=? ';
+         PARAMS.push(the_tables[table][r][pk_indexes[i]]);
+        } 
+        SQL_COUNT+= WHERE;
+        t.executeSql(SQL_COUNT,PARAMS,
+         function (tx, r) {
+     if ((r.rows.length>0)&&(r.rows[0].row_count==0)) {
+      let THE_INSERT='insert into '+sanitise(defn.TABLE)+'('+
+                     //Assumes columns don't contain commas.
+                      defn.COLUMNS.map(function(col){return sanitise(col.column)}).join(',')+') values '+
+                      generate_placeholders(cols.length);
+             t.executeSql(THE_INSERT,the_row_data,$L,$L);
+ 
+         } else{
+      let THE_UPDATE='update '+sanitise(defn.TABLE)+' set '+
+                     //Assumes columns don't contain commas.
+                      defn.COLUMNS.map(function(col){return sanitise(col.column)+'=? '}).join(',')+' where '+
+                      WHERE;
+            let all_params=the_row_data.concat(PARAMS);
+            t.executeSql(THE_UPDATE,all_params,$L,$L);
+        }
+    }, $L);
+       } else {
+        $L('Error: Metadata column count mismatch - '+table);
        }
-   }, $L);
-      } else {
-       $L('Error: Metadata column count mismatch - '+table);
       }
-     }
-     } // If defn
-  } //for
- },$L,function(){if ((flow==2)||(flow==3)) startup_sequence(flow);  });
+      } // If defn
+   } //for
+  },$L,function(){if ((flow==2)||(flow==3)) startup_sequence(flow); return; });
+ } else {
+  //No metadata
+  if ((flow==2)||(flow==3)) 
+   startup_sequence(flow); 
+ }
 }
 
 function get_definition_table(table) {
@@ -18547,8 +18597,9 @@ VF_CUSTOM_FUNCTIONS.push(
 <body id="body">
 
 <script>
- if (window.location.protocol!='file:')
-  document.head.innerHTML+='<link rel="manifest" href="vf.webmanifest" crossorigin="annonymous"/>';
+"use strict";
+if (window.location.protocol!='file:')
+ document.head.innerHTML+='<link rel="manifest" href="vf.webmanifest" crossorigin="annonymous"/>';
 </script>
 
 <!-- Begin Page Support elements -->
@@ -21116,7 +21167,7 @@ and can either be linked (joined) back to the source table or used for further p
 This is because the structure of the output table is predictable.  Custom Functions have a function Id that 
 is associated with them and an arbitrary "library" that is a general grouping (described below).  If you are a 
 web developer, the Custom Function metadata is extensible - <em>please search the source of this page for
-"// Example of adding your own Custom Function definition" </em> approximately line 18514 for
+"// Example of adding your own Custom Function definition" </em> approximately line 18564 for
 instructions.
 <h5>Input Table</h5>
 Specify the input table the Custom Function will be run against.
@@ -22632,7 +22683,9 @@ option will simply include a tag; "RESET_DB:true" within the Metadata.  When suc
 is loaded in a URL context on the Query String, then all Visual Field related WebSQL Objects
 will be dropped and recreated (as empty) upon initial page load.  Normally, you should not need
 to check this checkbox (and for some actions where offline state is required to be maintained
-between web invocations this option should NOT be selected).</dd>
+between web invocations this option should NOT be selected).  Reseting of Metadata by way
+of a passed METADATA url parameter can be overwritten (disabled) by an Internal Setting
+in this page.</dd>
 </dl>
 </p>
 <p>
@@ -22661,6 +22714,9 @@ ignores any "RESET_DB" setting within the Metadata.
         assumed to be a URL reference and fetched as a URL (remote web request) to 
         retrieve the Metadata as JSON.</li>
   </ol>
+  Please note that the above default behaivour processing of the METADATA Query String 
+  parameter can be modified, in the case of the way CORS requests are handled, or disabled
+  entirely, by changing Internal Settings to this page.
 </ol>
 <hr/>
 
@@ -22865,7 +22921,8 @@ report for example.  The 4 elements in the metadata are;
       Applicable only when passed in using the METADATA parameter in the Query
       String and is ignored for manually imported metadata. This should normally
       be set to "false" or omitted.  Should you need to reset the WebSQL database,
-      then set this to "true".</dd>
+      then set this to "true".  This option can/may be disabled by changing some
+      Internal Settings to this page.</dd>
   <dt>CONFIG</dt>
   <dd>An array of Config Item values for Visual Field.  Config Values typically
       broadly affect the behaviour of Visual Field.  Please refer to the config
@@ -23554,4 +23611,3 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 <!--
  <script src="test/vf_unit_test.js"/></script>
 -->
-

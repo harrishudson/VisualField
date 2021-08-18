@@ -1,6 +1,6 @@
 'use strict';
 
-var cacheVersion = 'vf3.2.0_version_002';
+var cacheVersion = 'vf3.3.0_version_001';
 var currentCache = {
   offline: 'offline-cache' + cacheVersion
 };
@@ -24,9 +24,9 @@ const offlineUrls = [
  'https://cdn.jsdelivr.net/npm/hammerjs@2.0.8/hammer.min.js', 
  'https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom@0.7.7/dist/chartjs-plugin-zoom.min.js', 
  'https://cdn.jsdelivr.net/npm/exifreader@3.16.0/dist/exif-reader.js',
- 'https://unpkg.com/vis-network@9.0.4/dist/vis-network.min.js',
+ 'https://unpkg.com/vis-network@9.0.5/dist/vis-network.min.js',
  'https://cdnjs.cloudflare.com/ajax/libs/leaflet.heat/0.2.0/leaflet-heat.js',
- 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.2/proj4.js',
+ 'https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.7.5/proj4.js',
  'https://cdn.jsdelivr.net/npm/jquery-csv@1.0.21/src/jquery.csv.js',
  'https://cdn.jsdelivr.net/npm/stemmer@1.0.5/index.js', 
  'https://cdn.jsdelivr.net/npm/double-metaphone@1.0.5/index.js', 
