@@ -13889,11 +13889,11 @@ function run_logical_network_visualization(rowid,state,is_update) {
     // Rerunnable query; 
   t.executeSql('select n.rowid as vf_internal_use_rowid, n.* from '+sanitise(the_node_object)+' n '+
           'where n.'+sanitise(the_node_id_column)+' in (select node_id from VF_NETWORK_NODE)', [],
-               function (tx,r) {node_result_set=r;},$L,$L);
+               function (tx,r) {node_result_set=r;}); 
   t.executeSql('select e.rowid as vf_internal_use_rowid, e.* from '+sanitise(the_edge_object)+' e '+
           'where e.'+sanitise(the_edge_to_id_column)+' in (select node_id from VF_NETWORK_NODE) and '+
           '      e.'+sanitise(the_edge_from_id_column)+' in (select node_id from VF_NETWORK_NODE)', [],
-   function (tx,r) {edge_result_set=r;},$L,$L);
+   function (tx,r) {edge_result_set=r;});
 
  },
   function () {
@@ -15110,11 +15110,11 @@ function network_process_shortest_path_step1(mode, start_node_id, end_node_id, u
  var node_result_set, edge_result_set;
  gDB.transaction(function (t) {
   t.executeSql('select n.rowid as vf_internal_use_rowid, n.* from '+sanitise(the_node_object)+' n where '+sanitise(the_node_id_column)+' is not null',[],
-   function (tx,r) {node_result_set=r;},null,null);
+   function (tx,r) {node_result_set=r;});
   t.executeSql('select e.rowid as vf_internal_use_rowid, e.* from '+sanitise(the_edge_object)+' e '+
           'where '+sanitise(the_edge_to_id_column)+' is not null and '+
           '      '+sanitise(the_edge_from_id_column)+' is not null',[],
-   function (tx,r) {edge_result_set=r;},null,null); //TODO future fix - consider limiting edges to existing nodes
+   function (tx,r) {edge_result_set=r;}); //TODO future fix - consider limiting edges to existing nodes
  },
   function() {
    network_process_shortest_path_no_rowids(the_node_object,the_node_id_column,the_edge_object,
