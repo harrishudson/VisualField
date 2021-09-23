@@ -1,6 +1,6 @@
 'use strict';
 
-var cacheVersion = 'vf3.3.0_version_001';
+var cacheVersion = 'vf3.4.0_version_002';
 var currentCache = {
   offline: 'offline-cache' + cacheVersion
 };

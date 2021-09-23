@@ -4,7 +4,7 @@
  <meta name="author" content="Harris Hudson. harris@harrishudson.com"/>
  <title>Visual Field</title>
  <meta name="description" content="Explore, Process and Visualize your data right in your browser."/>
- <meta id="application-name" name="application-name" content="Visual Field (v3.3.0 - Released August 2021)."/>
+ <meta id="application-name" name="application-name" content="Visual Field (v3.4.0 - Released September 2021)."/>
  <meta charset="UTF-8"/>
  <meta http-equiv='Content-Security-Policy' content="script-src 'self' 'unsafe-inline' 'unsafe-eval' https://npmcdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; "/>
  <meta http-equiv='Content-Security-Policy' content="style-src 'self' 'unsafe-inline' https://npmcdn.com https://unpkg.com https://cdn.jsdelivr.net https://cdnjs.cloudflare.com file: ;"/>
@@ -9834,8 +9834,22 @@ function browse_part4(object_name,column_list,context) {
 }
 
 function browse_part5(object_name,column_list,display_column_list,hidden_columns,context) {
+ gDB.transaction(function (t) {
+  t.executeSql("select t.rowid as test_rowid from "+sanitise(object_name)+' t limit 1', [],null);
+ },
+  function() {
+   var vQRY="select null as rowid, t.* from "+sanitise(object_name)+" t"; 
+   browse_part5a(vQRY,object_name,column_list,display_column_list,hidden_columns,context);
+  },
+  function() {
+   var vQRY="select t.rowid, t.* from "+sanitise(object_name)+" t"; 
+   browse_part5a(vQRY, object_name,column_list,display_column_list,hidden_columns,context);
+  });
+}
+
+function browse_part5a(QRY,object_name,column_list,display_column_list,hidden_columns,context) {
  var TERM=$I('browse_search_input').value;
- var QRY="select t.rowid, t.* from "+sanitise(object_name)+" t"; 
+ //var QRY="select t.rowid, t.* from "+sanitise(object_name)+" t"; 
  hidden_columns.push('rowid');
  var PARAMS=[];
  var WHERE="";
@@ -10740,9 +10754,23 @@ function table_viz_render_next1(object_name,column_list,context) {
   $I('table_viz_render_summary').innerHTML='No Data Found.';
 }
 
-function table_viz_render_next2(object_name,column_list,context) {
+function table_viz_render_next2(object_name,column_list,display_column_list,hidden_columns,context) {
+ gDB.transaction(function (t) {
+  t.executeSql("select t.rowid as test_rowid from "+sanitise(object_name)+" t limit 1",null); 
+ },
+  function() {
+   var vQRY="select null as vf_internal_use_rowid, t.* from "+sanitise(object_name)+" t"; 
+   table_viz_render_next2a(vQRY, object_name,column_list,context);
+  },
+  function() {
+   var vQRY="select t.rowid as vf_internal_use_rowid, t.* from "+sanitise(object_name)+" t "; 
+   table_viz_render_next2a(vQRY, object_name,column_list,context);
+  });
+}
+
+function table_viz_render_next2a(QRY, object_name,column_list,context) {
  var TERM=$I('table_viz_render_search_input').value;
- var QRY="select t.rowid as vf_internal_use_rowid, t.* from "+sanitise(object_name)+" t "; 
+ //var QRY="select t.rowid as vf_internal_use_rowid, t.* from "+sanitise(object_name)+" t "; 
  var PARAMS=[];
  var WHERE='';
  if (TERM) {
@@ -12392,7 +12420,14 @@ function run_map_visualization(rowid,state) {
  gDB.transaction(function (t) {
   t.executeSql("select t.rowid as vf_internal_use_rowid, t.* from "+sanitise(the_object)+' t', [],
    function (tx,r) {render_map(r,state);},null,null);
-  },load_map_tx_err,null);
+ },function() {run_map_visualization_no_rowid(the_object,state)},null);
+}
+
+function run_map_visualization_no_rowid(the_object,state) {
+gDB.transaction(function (t) {
+  t.executeSql("select null as vf_internal_use_rowid, t.* from "+sanitise(the_object)+' t', [],
+   function (tx,r) {render_map(r,state);},null,null);
+ },load_map_tx_err,null);
 }
 
 function load_map_tx_err(e) {
@@ -12893,8 +12928,16 @@ function run_heatmap_visualization(rowid,state) {
  var the_object=$I('heatmap_viz_object_name').value;
  gDB.transaction(function (t) {
   t.executeSql("select t.rowid as vf_internal_use_rowid, t.* from "+sanitise(the_object)+' t', [],
+   function (tx,r) {render_heatmap(r,state);},null,null); },
+   function(tx,r) {render_heatmap_no_rowid(the_object,state);}
+  );
+}
+
+function render_heatmap_no_rowid(the_object,state) {
+gDB.transaction(function (t) {
+  t.executeSql("select null as vf_internal_use_rowid, t.* from "+sanitise(the_object)+' t', [],
    function (tx,r) {render_heatmap(r,state);},null,null);
-  },load_heatmap_tx_err,null);
+ },load_heatmap_tx_err,null);
 }
 
 function load_heatmap_tx_err(e) {
@@ -13848,6 +13891,31 @@ function run_logical_network_visualization(rowid,state,is_update) {
           'where n.'+sanitise(the_node_id_column)+' in (select node_id from VF_NETWORK_NODE)', [],
                function (tx,r) {node_result_set=r;},$L,$L);
   t.executeSql('select e.rowid as vf_internal_use_rowid, e.* from '+sanitise(the_edge_object)+' e '+
+          'where e.'+sanitise(the_edge_to_id_column)+' in (select node_id from VF_NETWORK_NODE) and '+
+          '      e.'+sanitise(the_edge_from_id_column)+' in (select node_id from VF_NETWORK_NODE)', [],
+   function (tx,r) {edge_result_set=r;},$L,$L);
+
+ },
+  function() {
+   build_network(node_result_set,edge_result_set,state,is_update);
+  },
+  function () {
+   build_network_no_rowids(the_node_object,the_node_id_column,the_edge_object,
+	                   the_edge_to_id_column,the_edge_from_id_column,
+	                   state,is_update);
+  });
+}
+
+function build_network_no_rowids(the_node_object,the_node_id_column,the_edge_object,
+	                         the_edge_to_id_column,the_edge_from_id_column,
+	                         state,is_update) {
+ var node_result_set, edge_result_set;
+ gDB.transaction(function (t) {
+    // Rerunnable query; 
+  t.executeSql('select null as vf_internal_use_rowid, n.* from '+sanitise(the_node_object)+' n '+
+          'where n.'+sanitise(the_node_id_column)+' in (select node_id from VF_NETWORK_NODE)', [],
+               function (tx,r) {node_result_set=r;},$L,$L);
+  t.executeSql('select null as vf_internal_use_rowid, e.* from '+sanitise(the_edge_object)+' e '+
           'where e.'+sanitise(the_edge_to_id_column)+' in (select node_id from VF_NETWORK_NODE) and '+
           '      e.'+sanitise(the_edge_from_id_column)+' in (select node_id from VF_NETWORK_NODE)', [],
    function (tx,r) {edge_result_set=r;},$L,$L);
@@ -15047,11 +15115,33 @@ function network_process_shortest_path_step1(mode, start_node_id, end_node_id, u
           'where '+sanitise(the_edge_to_id_column)+' is not null and '+
           '      '+sanitise(the_edge_from_id_column)+' is not null',[],
    function (tx,r) {edge_result_set=r;},null,null); //TODO future fix - consider limiting edges to existing nodes
- },logical_load_network_tx_err, function() {
-     process_shortest_path_step2(mode,start_node_id,end_node_id,undirected,node_result_set,edge_result_set);
-       });
-
+ },
+  function() {
+   network_process_shortest_path_no_rowids(the_node_object,the_node_id_column,the_edge_object,
+	                                    the_edge_to_id_column,the_edge_from_id_column,
+	                                    mode,start_node_id,end_node_id,undirected);
+  },
+  function() {
+   process_shortest_path_step2(mode,start_node_id,end_node_id,undirected,node_result_set,edge_result_set);
+  });
 };
+
+function network_process_shortest_path_no_rowids(the_node_object,the_node_id_column,the_edge_object,
+	                                         the_edge_to_id_column,the_edge_from_id_column,
+	                                         mode,start_node_id,end_node_id,undirected) {
+ var node_result_set, edge_result_set;
+ gDB.transaction(function (t) {
+  t.executeSql('select null as vf_internal_use_rowid, n.* from '+sanitise(the_node_object)+' n where '+sanitise(the_node_id_column)+' is not null',[],
+   function (tx,r) {node_result_set=r;},null,null);
+  t.executeSql('select null as vf_internal_use_rowid, e.* from '+sanitise(the_edge_object)+' e '+
+          'where '+sanitise(the_edge_to_id_column)+' is not null and '+
+          '      '+sanitise(the_edge_from_id_column)+' is not null',[],
+   function (tx,r) {edge_result_set=r;},null,null); //TODO future fix - consider limiting edges to existing nodes
+ },logical_load_network_tx_err, 
+   function() {
+    process_shortest_path_step2(mode,start_node_id,end_node_id,undirected,node_result_set,edge_result_set);
+   });
+}
 
 function logical_network_process_shortest_path_add_nodes() {
  logical_network_close_dialogs();
@@ -17068,7 +17158,7 @@ function render_geotagged_map(dataset,from,to,term) {
 
  gTHE_MAP_FEATURES=[];
  var feat_idx=0;
- for (var i=0; i<geom_array.length; i++) {
+ for (let i=0; i<geom_array.length; i++) {
   var feat=null;
   try { feat=toFeature(geom_array[i].geometry,i); } catch(e) { /* Ingore empty geoms */};
   if (!feat) { continue };
@@ -17948,8 +18038,8 @@ function sql_generate_view_dump(view_name,mode,cr_ddl_sql,drop_ddl_sql,
     return;
    };
  };
- dump.write(export_statement(drop_ddl_sql));
- dump.write(export_statement(cr_ddl_sql));
+ dump.write(sql_export_statement(drop_ddl_sql));
+ dump.write(sql_export_statement(cr_ddl_sql));
  sql_export_object_execute_step1(context,object_list,object_list_offset+1,dump);
 };
 
@@ -18347,6 +18437,8 @@ function createGenericElement(tag,elem_class,object_name,column_name,rowid,elem_
 
 function createListElement(dt_name,dt_class,dl_value,dl_table,dl_column,dl_rowid,map_popup_idx,
                            link_target,network_node_idx,network_link_idx) {
+ var attr_popup_idx='0';
+ try {attr_popup_idx=map_popup_idx.toString();}catch(e){attr_popup_idx='0'};
  let the_class='';
  if (dt_class)
   the_class='class="'+escATTR(dt_class)+'"';
@@ -18358,7 +18450,7 @@ function createListElement(dt_name,dt_class,dl_value,dl_table,dl_column,dl_rowid
           ' data-table="'+hexEncode(dl_table)+'" '+
           ' data-column="'+hexEncode(dl_column)+'" '+
           ' data-rowid="'+hexEncode(dl_rowid)+'" '+
-          ' data-popup_idx="'+escATTR((map_popup_idx?map_popup_idx.toString():null))+'" '+
+          ' data-popup_idx="'+escATTR(attr_popup_idx)+'" '+
           ' data-network_node_idx="'+escATTR((network_node_idx?network_node_idx.toString():null))+'" '+
           ' data-network_link_idx="'+escATTR((network_link_idx?network_link_idx.toString():null))+'" '+
           'onblur="updateEditContent(this);">'+
@@ -18429,7 +18521,6 @@ function showEditContent_step2(elem,new_value,text,the_table_attr,the_table,
  for (var i=0;i<qs.length;i++)
    //qs[i].innerText=new_value;
    qs[i].innerHTML=escHTML(new_value);
-
  //Update map popup if applicable
  if ((map_popup_idx)&&(gTHE_MAP)) {
   gTHE_MAP.eachLayer(function(layer) {
@@ -21167,7 +21258,7 @@ and can either be linked (joined) back to the source table or used for further p
 This is because the structure of the output table is predictable.  Custom Functions have a function Id that 
 is associated with them and an arbitrary "library" that is a general grouping (described below).  If you are a 
 web developer, the Custom Function metadata is extensible - <em>please search the source of this page for
-"// Example of adding your own Custom Function definition" </em> approximately line 18564 for
+"// Example of adding your own Custom Function definition" </em> approximately line 18655 for
 instructions.
 <h5>Input Table</h5>
 Specify the input table the Custom Function will be run against.
