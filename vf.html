@@ -13896,13 +13896,13 @@ function run_logical_network_visualization(rowid,state,is_update) {
    function (tx,r) {edge_result_set=r;},$L,$L);
 
  },
-  function() {
-   build_network(node_result_set,edge_result_set,state,is_update);
-  },
   function () {
    build_network_no_rowids(the_node_object,the_node_id_column,the_edge_object,
 	                   the_edge_to_id_column,the_edge_from_id_column,
 	                   state,is_update);
+  },
+  function() {
+   build_network(node_result_set,edge_result_set,state,is_update);
   });
 }
 
