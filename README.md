@@ -1,6 +1,8 @@
 # Visual Field
 Explore, Process and Visualize your data right in your browser.
 
+![Screenshot](https://harrishudson.com/github/vf_snapshot1.png)
+
 ## Demo
 Visual Field Examples: [https://visualfield.org/](https://visualfield.org/).
 
